@@ -1,0 +1,45 @@
+package com.casestudy.carmanagement.services;
+
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.util.List;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import com.casestudy.carmanagement.entities.Car;
+import com.casestudy.carmanagement.repositories.CarRepository;
+
+@Service
+public class CarService {
+
+    @Autowired
+    private CarRepository carRepository;
+
+    // Define date formats
+    private static final DateTimeFormatter formatter1 = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+    private static final DateTimeFormatter formatter2 = DateTimeFormatter.ofPattern("dd-MM-yyyy");
+
+    // Helper method to parse the date strings to LocalDate objects
+    private LocalDate parseDate(String dateStr, DateTimeFormatter formatter) {
+        return LocalDate.parse(dateStr, formatter);
+    }
+
+    public List<Car> getAvailableCars(String startDateStr1, String endDateStr1, String startDateStr2, String endDateStr2) {
+        // Parse the date strings to LocalDate using the correct format
+        LocalDate startDate1 = null, endDate1 = null, startDate2 = null, endDate2 = null;
+
+        // Convert first set of dates (yyyy-MM-dd)
+        startDate1 = parseDate(startDateStr1, formatter1);
+        endDate1 = parseDate(endDateStr1, formatter1);
+
+        // Convert second set of dates (dd-MM-yyyy)
+        startDate2 = parseDate(startDateStr2, formatter2);
+        endDate2 = parseDate(endDateStr2, formatter2);
+
+        // Log the requested date range for debugging
+        System.out.println("Requested Date Range 1: " + startDate1 + " to " + endDate1);
+        System.out.println("Requested Date Range 2: " + startDate2 + " to " + endDate2);
+
+        // Call repository method to get available cars
+        return carRepository.findAvailableCars(startDate1, endDate1, startDate2, endDate2);
+    }
+}
