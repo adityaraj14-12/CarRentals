@@ -1,0 +1,21 @@
+package com.example.service;
+
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import com.example.model.Booking;
+import com.example.repository.BookingRepository;
+
+@Service
+public class BookingService {
+
+    @Autowired
+    private BookingRepository bookingRepository;
+
+    // Get all bookings for a particular car
+    public List<Booking> getBookingsByCarId(Long carId) {
+        return bookingRepository.findByCarId(carId);
+    }
+}

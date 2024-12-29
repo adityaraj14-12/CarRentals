@@ -1,0 +1,84 @@
+package com.casestudy.carmanagement.services;
+
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.util.List;
+import java.util.stream.Collectors;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import com.casestudy.carmanagement.entities.Car;
+import com.casestudy.carmanagement.entities.Booking;
+import com.casestudy.carmanagement.repositories.CarRepository;
+import com.casestudy.carmanagement.services.BookingService;
+
+@Service
+public class CarService {
+
+    @Autowired
+    private CarRepository carRepository;
+
+    @Autowired
+    private BookingService bookingService; // To access booking data
+
+    // Date format for parsing (URL format yyyy-MM-dd)
+    private static final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+
+    // Date format for parsing car's availability (assumed to be dd-MM-yyyy)
+    private static final DateTimeFormatter carDateFormatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
+
+    // Method to check car availability for a given date range
+    public boolean isCarAvailable(Long carId, String startDateStr, String endDateStr) {
+        // Parse the requested date range from the URL (assumed to be yyyy-MM-dd format)
+        LocalDate requestedStartDate = LocalDate.parse(startDateStr, formatter);
+        LocalDate requestedEndDate = LocalDate.parse(endDateStr, formatter);
+
+        // Fetch the car by ID
+        Car car = carRepository.findById(carId).orElse(null);
+        if (car == null) {
+            return false; // Car not found
+        }
+
+        // Fetch all bookings for this car using BookingService
+        List<Booking> bookings = bookingService.getBookingsByCarId(carId);
+
+        // Parse the car's available start and end dates (assumed to be dd-MM-yyyy format)
+        LocalDate carStartDate = LocalDate.parse(car.getStartDate(), carDateFormatter);
+        LocalDate carEndDate = LocalDate.parse(car.getEndDate(), carDateFormatter);
+
+        // Check if the requested dates are within the car's available range
+        if (requestedStartDate.isBefore(carStartDate) || requestedEndDate.isAfter(carEndDate)) {
+            return false; // Requested dates are outside of car's available range
+        }
+
+        // Check for overlaps with existing bookings
+        for (Booking booking : bookings) {
+            // Parse the booking's start and end dates
+            LocalDate bookingStartDate = LocalDate.parse(booking.getStartDate(), carDateFormatter);
+            LocalDate bookingEndDate = LocalDate.parse(booking.getEndDate(), carDateFormatter);
+
+            // Check for overlap: The requested dates should not overlap with existing booking dates
+            if (!(requestedEndDate.isBefore(bookingStartDate) || requestedStartDate.isAfter(bookingEndDate))) {
+                return false; // Overlap detected
+            }
+        }
+
+        // If no overlap is found, the car is available
+        return true;
+    }
+
+    // Get available cars for a given date range
+    public List<Car> getAvailableCars(String startDateStr, String endDateStr) {
+        LocalDate requestedStartDate = LocalDate.parse(startDateStr, formatter);
+        LocalDate requestedEndDate = LocalDate.parse(endDateStr, formatter);
+
+        // Fetch all cars
+        List<Car> cars = carRepository.findAll();
+
+        // Filter cars based on availability and overlapping bookings
+        return cars.stream()
+                .filter(car -> isCarAvailable(car.getId(), startDateStr, endDateStr))
+                .collect(Collectors.toList());
+    }
+}
