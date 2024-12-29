@@ -1,0 +1,60 @@
+package com.casestudy.carmanagement.services;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import com.casestudy.carmanagement.entities.Car;
+import com.casestudy.carmanagement.repositories.CarRepository;
+
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.util.List;
+
+@Service
+public class CarService {
+
+    @Autowired
+    private CarRepository carRepository;
+
+    // Define date formats
+    private static final DateTimeFormatter formatter1 = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+    private static final DateTimeFormatter formatter2 = DateTimeFormatter.ofPattern("dd-MM-yyyy");
+
+    // Helper method to parse the date strings to LocalDate objects
+    private LocalDate parseDate(String dateStr, DateTimeFormatter formatter) {
+        return LocalDate.parse(dateStr, formatter);
+    }
+
+    public List<Car> getAvailableCars(String startDateStr, String endDateStr) {
+        // First try parsing the start and end dates with the "yyyy-MM-dd" format
+        LocalDate startDate1 = null, endDate1 = null;
+        LocalDate startDate2 = null, endDate2 = null;
+
+        try {
+            // Try parsing using yyyy-MM-dd format
+            startDate1 = parseDate(startDateStr, formatter1);
+            endDate1 = parseDate(endDateStr, formatter1);
+        } catch (Exception e) {
+            // If parsing fails, try parsing using dd-MM-yyyy format
+            try {
+                startDate2 = parseDate(startDateStr, formatter2);
+                endDate2 = parseDate(endDateStr, formatter2);
+            } catch (Exception ex) {
+                // Handle the case where both formats fail (optional: throw an exception or log it)
+                throw new IllegalArgumentException("Invalid date format. Use 'yyyy-MM-dd' or 'dd-MM-yyyy'.");
+            }
+        }
+
+        // If both dates in the first format were parsed successfully, use them
+        if (startDate1 != null && endDate1 != null) {
+            return carRepository.findAvailableCars(startDate1, endDate1, startDate2, endDate2);
+        }
+        
+        // If the first format failed, but the second format was successful, use those values
+        if (startDate2 != null && endDate2 != null) {
+            return carRepository.findAvailableCars(startDate1, endDate1, startDate2, endDate2);
+        }
+
+        // Default case if neither format was valid (should never hit here with proper input)
+        throw new IllegalArgumentException("Invalid date format.");
+    }
+}

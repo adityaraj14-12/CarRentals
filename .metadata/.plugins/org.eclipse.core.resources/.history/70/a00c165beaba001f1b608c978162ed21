@@ -1,0 +1,31 @@
+package com.example.service;
+
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import com.example.dto.BookingRequest;
+import com.example.model.Booking;
+import com.example.repository.BookingRepository;
+import com.example.util.JwtTokenUtil;
+
+@Service
+public class BookingService {
+
+    @Autowired
+    private BookingRepository bookingRepository;
+
+    @Autowired
+    private JwtTokenUtil jwtTokenUtil;
+
+    public Booking createBooking(Booking booking) {
+        return bookingRepository.save(booking);
+    }
+    
+ // In your BookingService
+    public List<Booking> getBookingsByUserId(Long userId) {
+        return bookingRepository.findByUserId(userId);  // Assuming you have a method in the repository to fetch bookings by userId
+    }
+
+}
